@@ -56,24 +56,50 @@ add_filter('incuslider_register_axes', function($axes) {
         );
     }
 
-    // Axis: WP Role
-    $axes['role'] = array(
-        'id'      => 'role',
-        'label'   => __('Rol WP', 'incuslider'),
-        'options' => function() {
-            $opts = array();
-            $roles = wp_roles()->roles ?? array();
-            foreach ($roles as $slug => $r) $opts[$slug] = $r['name'] ?? $slug;
-            $opts['visitor'] = __('Visitante (no logueado)', 'incuslider');
-            return $opts;
-        },
-        'resolve' => function($user_id) {
-            if (!$user_id) return 'visitor';
-            $u = get_userdata($user_id);
-            if (!$u) return 'visitor';
-            return $u->roles ?: 'visitor';
-        },
-    );
+    // Axis: Rol Comunidad (LearnDash groups — Brand Lover / Emprendedor / Embajadoras / etc.)
+    if (post_type_exists('groups')) {
+        $axes['community_role'] = array(
+            'id'      => 'community_role',
+            'label'   => __('Rol Comunidad', 'incuslider'),
+            'options' => function() {
+                $opts = array();
+                $groups = get_posts(array(
+                    'post_type'      => 'groups',
+                    'posts_per_page' => -1,
+                    'orderby'        => 'title',
+                    'order'          => 'ASC',
+                    'post_status'    => 'publish',
+                ));
+                foreach ($groups as $g) {
+                    $opts[(string) $g->ID] = $g->post_title;
+                }
+                return $opts;
+            },
+            'resolve' => function($user_id) {
+                if (!$user_id) return null;
+
+                // Preferir API oficial de LearnDash si está disponible
+                if (function_exists('learndash_get_users_group_ids')) {
+                    $ids = learndash_get_users_group_ids($user_id);
+                    return is_array($ids) ? array_map('strval', $ids) : array();
+                }
+
+                // Fallback: leer usermeta learndash_group_{id}_enrolled_at
+                global $wpdb;
+                $keys = $wpdb->get_col($wpdb->prepare(
+                    "SELECT meta_key FROM {$wpdb->usermeta} WHERE user_id=%d AND meta_key LIKE 'learndash\\_group\\_%\\_enrolled\\_at'",
+                    $user_id
+                ));
+                $enrolled = array();
+                foreach ($keys as $k) {
+                    if (preg_match('/learndash_group_(\d+)_enrolled_at/', $k, $m)) {
+                        $enrolled[] = $m[1];
+                    }
+                }
+                return $enrolled;
+            },
+        );
+    }
 
     return $axes;
 });

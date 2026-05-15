@@ -32,8 +32,7 @@ require_once INCUSLIDER_DIR . 'includes/class-metabox.php';
 require_once INCUSLIDER_DIR . 'includes/class-admin-columns.php';
 require_once INCUSLIDER_DIR . 'includes/class-admin-bulk.php';
 require_once INCUSLIDER_DIR . 'includes/class-admin-sort.php';
-require_once INCUSLIDER_DIR . 'includes/class-admin-preview.php';
-require_once INCUSLIDER_DIR . 'includes/class-onboarding.php';
+require_once INCUSLIDER_DIR . 'includes/class-admin-settings.php';
 require_once INCUSLIDER_DIR . 'includes/class-query.php';
 require_once INCUSLIDER_DIR . 'includes/class-migrate.php';
 require_once INCUSLIDER_DIR . 'includes/axes/esencia-axes.php';
@@ -65,8 +64,7 @@ class incuSlider {
             incuSlider_Admin_Columns::init();
             incuSlider_Admin_Bulk::init();
             incuSlider_Admin_Sort::init();
-            incuSlider_Admin_Preview::init();
-            incuSlider_Onboarding::init();
+            incuSlider_Admin_Settings::init();
         }
 
         // Query filter para Elementor Loop

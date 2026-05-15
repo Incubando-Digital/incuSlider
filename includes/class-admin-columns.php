@@ -15,6 +15,13 @@ class incuSlider_Admin_Columns {
         add_filter("manage_{$pt}_posts_columns", array(__CLASS__, 'register_columns'));
         add_action("manage_{$pt}_posts_custom_column", array(__CLASS__, 'render_column'), 10, 2);
         add_filter("manage_edit-{$pt}_sortable_columns", array(__CLASS__, 'sortable_columns'));
+        add_action('admin_enqueue_scripts', array(__CLASS__, 'enqueue_listing_styles'));
+    }
+
+    public static function enqueue_listing_styles($hook) {
+        if ($hook !== 'edit.php') return;
+        if (($_GET['post_type'] ?? '') !== incuSlider_CPT::POST_TYPE) return;
+        wp_enqueue_style('incuslider-admin', INCUSLIDER_URL . 'assets/css/metabox.css', array(), INCUSLIDER_VERSION);
     }
 
     public static function register_columns($cols) {
@@ -38,10 +45,10 @@ class incuSlider_Admin_Columns {
     public static function render_column($column, $post_id) {
         switch ($column) {
             case 'incu_thumb':
-                $thumb = get_the_post_thumbnail($post_id, array(80, 80));
+                $thumb = get_the_post_thumbnail($post_id, array(50, 50));
                 if (!$thumb) {
                     $mobile_id = (int) get_post_meta($post_id, '_incu_image_mobile', true);
-                    if ($mobile_id) $thumb = wp_get_attachment_image($mobile_id, array(80, 80));
+                    if ($mobile_id) $thumb = wp_get_attachment_image($mobile_id, array(50, 50));
                 }
                 echo $thumb ?: '<span style="color:#999">—</span>';
                 break;
@@ -50,15 +57,21 @@ class incuSlider_Admin_Columns {
                 $axes = incuSlider_Axes::get_all();
                 $any = false;
                 foreach ($axes as $axis_id => $axis_def) {
-                    $values = (array) get_post_meta($post_id, incuSlider_Axes::meta_key_for($axis_id), true);
+                    $values = get_post_meta($post_id, incuSlider_Axes::meta_key_for($axis_id), true);
+                    // Normalizar: si está vacío string o array vacío → tratar como "all"
+                    if (empty($values)) continue;
+                    $values = is_array($values) ? $values : array($values);
+                    // Limpiar valores vacíos dentro del array
+                    $values = array_values(array_filter($values, function($v) { return $v !== '' && $v !== null; }));
                     if (empty($values) || in_array('all', $values, true)) continue;
                     $options = incuSlider_Axes::get_options($axis_id);
                     $labels = array();
                     foreach ($values as $v) {
                         $labels[] = $options[$v] ?? $v;
                     }
+                    if (empty($labels)) continue;
                     $class = 'is-' . $axis_id;
-                    printf('<span class="incuslider-tag %s"><strong>%s:</strong> %s</span>',
+                    printf('<span class="incuslider-tag %s"><strong>%s:</strong> %s</span> ',
                         esc_attr($class),
                         esc_html($axis_def['label']),
                         esc_html(implode(', ', $labels))
@@ -66,7 +79,7 @@ class incuSlider_Admin_Columns {
                     $any = true;
                 }
                 if (!$any) {
-                    echo '<span class="incuslider-tag is-all">' . esc_html__('Mostrar a todos', 'incuslider') . '</span>';
+                    echo '<span class="incuslider-tag is-all">' . esc_html__('Todos', 'incuslider') . '</span>';
                 }
                 break;
 

@@ -58,6 +58,9 @@ class incuSlider {
             add_action('init', array('incuSlider_CPT', 'register'), 5);
         }
 
+        // Integraciones (Elementor Pro Loop post-type list, etc.)
+        incuSlider_CPT::init_integrations();
+
         // Admin features
         if (is_admin()) {
             incuSlider_Metabox::init();

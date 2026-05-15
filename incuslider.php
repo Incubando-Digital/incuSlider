@@ -58,8 +58,13 @@ class incuSlider {
             add_action('init', array('incuSlider_CPT', 'register'), 5);
         }
 
-        // Integraciones (Elementor Pro Loop post-type list, etc.)
-        incuSlider_CPT::init_integrations();
+        // NOTA: NO usar incuSlider_CPT::init_integrations().
+        // El filtro elementor_pro/utils/get_public_post_types hacía que Elementor Pro
+        // construyera Theme Builder conditions (singular/archive) para incu_slide en
+        // CADA carga del editor; como el CPT es public=false/has_archive=false, ese
+        // path cuelga el editor (>200s). NO es necesario: el Loop Carousel funciona
+        // vía el Custom Query ID 'incuslider_main' — apply_user_filters() fuerza
+        // post_type=incu_slide sin importar qué post type se elija en el dropdown.
 
         // Admin features
         if (is_admin()) {

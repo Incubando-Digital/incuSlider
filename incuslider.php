@@ -1,0 +1,97 @@
+<?php
+/**
+ * Plugin Name: incuSlider
+ * Plugin URI: https://github.com/Incubando-Digital/incuSlider
+ * Description: Banner slider reutilizable que reemplaza el patrón "N sliders duplicados con visibility conditions" por UN solo Elementor Loop Carousel con filtrado server-side por contexto del user (rank, país, rol, fechas).
+ * Version: 1.1.0
+ * Author: Incubando Digital
+ * Author URI: https://incubando.digital
+ * License: GPL-2.0+
+ * Text Domain: incuslider
+ * Requires at least: 5.8
+ * Tested up to: 6.5
+ * Requires PHP: 7.4
+ *
+ * @package incuSlider
+ */
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+define('INCUSLIDER_VERSION', '1.1.0');
+define('INCUSLIDER_DIR', plugin_dir_path(__FILE__));
+define('INCUSLIDER_URL', plugin_dir_url(__FILE__));
+define('INCUSLIDER_FILE', __FILE__);
+define('INCUSLIDER_BASENAME', plugin_basename(__FILE__));
+
+// ─── Core classes ────────────────────────────────────────────────────
+require_once INCUSLIDER_DIR . 'includes/class-cpt.php';
+require_once INCUSLIDER_DIR . 'includes/class-axes.php';
+require_once INCUSLIDER_DIR . 'includes/class-metabox.php';
+require_once INCUSLIDER_DIR . 'includes/class-admin-columns.php';
+require_once INCUSLIDER_DIR . 'includes/class-admin-bulk.php';
+require_once INCUSLIDER_DIR . 'includes/class-admin-sort.php';
+require_once INCUSLIDER_DIR . 'includes/class-admin-preview.php';
+require_once INCUSLIDER_DIR . 'includes/class-onboarding.php';
+require_once INCUSLIDER_DIR . 'includes/class-query.php';
+require_once INCUSLIDER_DIR . 'includes/class-migrate.php';
+require_once INCUSLIDER_DIR . 'includes/axes/esencia-axes.php';
+
+// ─── Bootstrap ───────────────────────────────────────────────────────
+add_action('plugins_loaded', function() {
+    incuSlider::instance();
+});
+
+class incuSlider {
+    private static $instance = null;
+
+    public static function instance() {
+        if (null === self::$instance) self::$instance = new self();
+        return self::$instance;
+    }
+
+    private function __construct() {
+        // CPT register
+        if (did_action('init')) {
+            incuSlider_CPT::register();
+        } else {
+            add_action('init', array('incuSlider_CPT', 'register'), 5);
+        }
+
+        // Admin features
+        if (is_admin()) {
+            incuSlider_Metabox::init();
+            incuSlider_Admin_Columns::init();
+            incuSlider_Admin_Bulk::init();
+            incuSlider_Admin_Sort::init();
+            incuSlider_Admin_Preview::init();
+            incuSlider_Onboarding::init();
+        }
+
+        // Query filter para Elementor Loop
+        incuSlider_Query::init();
+
+        // WP-CLI
+        if (defined('WP_CLI') && WP_CLI) {
+            \WP_CLI::add_command('incuslider', 'incuSlider_Migrate');
+        }
+    }
+}
+
+// ─── Activation / Deactivation ───────────────────────────────────────
+register_activation_hook(__FILE__, function() {
+    // Flush rewrites para que CPT funcione
+    require_once INCUSLIDER_DIR . 'includes/class-cpt.php';
+    incuSlider_CPT::register();
+    flush_rewrite_rules();
+
+    // Flag para mostrar onboarding wizard al next admin page load
+    if (!get_option('incuslider_onboarding_completed')) {
+        set_transient('incuslider_show_onboarding', 1, 60);
+    }
+});
+
+register_deactivation_hook(__FILE__, function() {
+    flush_rewrite_rules();
+});

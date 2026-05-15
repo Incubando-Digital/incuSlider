@@ -41,6 +41,16 @@ Banner slider reutilizable que reemplaza el patrón "N sliders duplicados con vi
 6. **Vigencia** (opcional): rango de fechas
 7. Publicar
 
+### Crear el Loop Item template (Theme Builder)
+
+El Loop Item define cómo se ve UNA slide. Diseñalo en **Templates → Theme Builder → Loop Item**:
+
+- **Imagen de la slide**: usá la **imagen destacada** del CPT. Para mostrarla como fondo:
+  - En un Container, Background → Classic → Image → click el ícono dinámico (🔧) → **"Imagen destacada"** (dynamic tag `post-featured-image`).
+  - ⚠️ Importante: es **"Imagen destacada"** (`post-featured-image`), NO confundir con otros tags de imagen.
+- **Texto/heading**: widget Heading → dynamic tag **"Título de la entrada"** (`post-title`) o un campo custom del slide.
+- **Link**: el campo `_incu_link_url` del slide (custom field dynamic tag, o ACF si lo usás).
+
 ### Insertar en una página Elementor
 
 1. Agregá widget **Loop Carousel** (Elementor Pro)
@@ -48,7 +58,7 @@ Banner slider reutilizable que reemplaza el patrón "N sliders duplicados con vi
    - **Source**: Custom
    - **Custom Type**: `incu_slide`
    - **Custom Query ID**: `incuslider_main`
-   - **Choose a template**: tu Loop Item template (creado en Theme Builder)
+   - **Choose a template**: el Loop Item template del paso anterior
 3. Solo se renderizan las slides que matchean al contexto del user actual
 
 ### Vista previa por contexto

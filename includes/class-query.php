@@ -28,17 +28,47 @@ class incuSlider_Query {
         $query->set('orderby', array('menu_order' => 'ASC', 'date' => 'DESC'));
         $query->set('post_status', 'publish');
 
-        $meta_query = self::build_meta_query($user_id);
+        // Preview context override: si la URL trae incuslider_preview_ctx (capability-gated),
+        // se usa esa data en vez del current user para previsualizar
+        $preview_ctx = self::get_preview_context_override();
+        $meta_query = self::build_meta_query($user_id, $preview_ctx);
         if (!empty($meta_query)) $query->set('meta_query', $meta_query);
     }
 
-    public static function build_meta_query($user_id) {
+    /**
+     * Lee `incuslider_preview_ctx` de la URL si el current user tiene capability edit_posts.
+     * Formato: `axis1:val1,axis2:val2`. Devuelve array assoc o null.
+     */
+    public static function get_preview_context_override() {
+        if (empty($_GET['incuslider_preview_ctx'])) return null;
+        if (!current_user_can('edit_posts')) return null;
+        $raw = sanitize_text_field(wp_unslash($_GET['incuslider_preview_ctx']));
+        $ctx = array();
+        foreach (explode(',', $raw) as $pair) {
+            $parts = explode(':', $pair, 2);
+            if (count($parts) !== 2) continue;
+            $axis = sanitize_key($parts[0]);
+            $val  = sanitize_text_field($parts[1]);
+            if ($axis !== '' && $val !== '') $ctx[$axis] = $val;
+        }
+        return $ctx ?: null;
+    }
+
+    public static function build_meta_query($user_id, $preview_ctx = null) {
         $axes = incuSlider_Axes::get_all();
         $meta = array('relation' => 'AND');
 
         foreach ($axes as $axis_id => $axis_def) {
             $meta_key = incuSlider_Axes::meta_key_for($axis_id);
-            $user_values = incuSlider_Axes::get_user_value($axis_id, $user_id);
+
+            if ($preview_ctx !== null) {
+                // Override mode: usar valor del preview o vacío
+                $user_values = isset($preview_ctx[$axis_id]) && $preview_ctx[$axis_id] !== ''
+                    ? array((string) $preview_ctx[$axis_id])
+                    : array();
+            } else {
+                $user_values = incuSlider_Axes::get_user_value($axis_id, $user_id);
+            }
 
             $axis_clause = array('relation' => 'OR',
                 array('key' => $meta_key, 'value' => '"all"', 'compare' => 'LIKE'),

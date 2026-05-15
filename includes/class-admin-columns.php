@@ -71,11 +71,13 @@ class incuSlider_Admin_Columns {
                     }
                     if (empty($labels)) continue;
                     $class = 'is-' . $axis_id;
-                    printf('<span class="incuslider-tag %s"><strong>%s:</strong> %s</span> ',
-                        esc_attr($class),
-                        esc_html($axis_def['label']),
-                        esc_html(implode(', ', $labels))
-                    );
+                    foreach ($labels as $label) {
+                        printf('<span class="incuslider-tag %s" title="%s">%s</span> ',
+                            esc_attr($class),
+                            esc_attr($axis_def['label']),
+                            esc_html($label)
+                        );
+                    }
                     $any = true;
                 }
                 if (!$any) {

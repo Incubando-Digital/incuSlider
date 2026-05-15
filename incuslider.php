@@ -67,6 +67,12 @@ class incuSlider {
             incuSlider_Admin_Settings::init();
         }
 
+        // Hide admin bar en frontend preview (corre también en frontend)
+        add_filter('show_admin_bar', function($show) {
+            if (!empty($_GET['incuslider_no_admin_bar'])) return false;
+            return $show;
+        });
+
         // Query filter para Elementor Loop
         incuSlider_Query::init();
 

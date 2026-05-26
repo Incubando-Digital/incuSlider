@@ -3,7 +3,7 @@
  * Plugin Name: incuSlider
  * Plugin URI: https://github.com/Incubando-Digital/incuSlider
  * Description: Banner slider reutilizable que reemplaza el patrón "N sliders duplicados con visibility conditions" por UN solo Elementor Loop Carousel con filtrado server-side por contexto del user (rank, país, rol, fechas).
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: Incubando Digital
  * Author URI: https://incubando.digital
  * License: GPL-2.0+
@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('INCUSLIDER_VERSION', '1.1.0');
+define('INCUSLIDER_VERSION', '1.2.0');
 define('INCUSLIDER_DIR', plugin_dir_path(__FILE__));
 define('INCUSLIDER_URL', plugin_dir_url(__FILE__));
 define('INCUSLIDER_FILE', __FILE__);
@@ -35,6 +35,7 @@ require_once INCUSLIDER_DIR . 'includes/class-admin-sort.php';
 require_once INCUSLIDER_DIR . 'includes/class-admin-settings.php';
 require_once INCUSLIDER_DIR . 'includes/class-query.php';
 require_once INCUSLIDER_DIR . 'includes/class-migrate.php';
+require_once INCUSLIDER_DIR . 'includes/class-image-helper.php';
 require_once INCUSLIDER_DIR . 'includes/axes/esencia-axes.php';
 
 // ─── Bootstrap ───────────────────────────────────────────────────────
@@ -83,6 +84,9 @@ class incuSlider {
 
         // Query filter para Elementor Loop
         incuSlider_Query::init();
+
+        // Shortcode [incuslider_image] — responsive <picture> con desktop + mobile.
+        incuSlider_Image_Helper::init();
 
         // WP-CLI
         if (defined('WP_CLI') && WP_CLI) {

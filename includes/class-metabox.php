@@ -16,8 +16,16 @@ class incuSlider_Metabox {
 
     public static function init() {
         add_action('add_meta_boxes', array(__CLASS__, 'register'));
+        // Quitar la caja nativa "Imagen destacada" del sidebar: la imagen Desktop
+        // ahora se gestiona desde el campo del metabox incuSlider (que escribe la
+        // featured image por detrás). Evita tener dos lugares para lo mismo.
+        add_action('add_meta_boxes_' . incuSlider_CPT::POST_TYPE, array(__CLASS__, 'remove_featured_box'), 99);
         add_action('save_post_' . incuSlider_CPT::POST_TYPE, array(__CLASS__, 'save'), 10, 2);
         add_action('admin_enqueue_scripts', array(__CLASS__, 'enqueue_assets'));
+    }
+
+    public static function remove_featured_box() {
+        remove_meta_box('postimagediv', incuSlider_CPT::POST_TYPE, 'side');
     }
 
     public static function enqueue_assets($hook) {
@@ -55,6 +63,10 @@ class incuSlider_Metabox {
     public static function render($post) {
         wp_nonce_field(self::NONCE_ACTION, self::NONCE_NAME);
 
+        // Imagen Desktop = featured image (post thumbnail). Se gestiona desde este
+        // metabox, pero internamente sigue siendo la featured image para que el
+        // dynamic tag "Imagen destacada" (post-featured-image) del Loop Item funcione.
+        $image_desktop_id = (int) get_post_thumbnail_id($post->ID);
         $image_mobile_id = (int) get_post_meta($post->ID, '_incu_image_mobile', true);
         $link_url        = get_post_meta($post->ID, '_incu_link_url', true);
         $link_target     = get_post_meta($post->ID, '_incu_link_target', true) ?: '_self';
@@ -63,6 +75,8 @@ class incuSlider_Metabox {
         $date_from       = get_post_meta($post->ID, '_incu_date_from', true);
         $date_to         = get_post_meta($post->ID, '_incu_date_to', true);
 
+        $desktop_thumb = $image_desktop_id ? wp_get_attachment_image_url($image_desktop_id, 'medium') : '';
+        $desktop_filename = $image_desktop_id ? basename(get_attached_file($image_desktop_id) ?: '') : '';
         $mobile_thumb = $image_mobile_id ? wp_get_attachment_image_url($image_mobile_id, 'medium') : '';
         $mobile_filename = $image_mobile_id ? basename(get_attached_file($image_mobile_id) ?: '') : '';
 
@@ -84,6 +98,14 @@ class incuSlider_Metabox {
             '_incu_date_to'      => isset($_POST['_incu_date_to'])      ? sanitize_text_field($_POST['_incu_date_to']) : '',
         );
         foreach ($simple as $k => $v) update_post_meta($post_id, $k, $v);
+
+        // Imagen Desktop → featured image. Mantiene el dynamic tag post-featured-image
+        // funcionando en el Loop Item de Elementor.
+        if (isset($_POST['_incu_image_desktop'])) {
+            $desktop_id = absint($_POST['_incu_image_desktop']);
+            if ($desktop_id) set_post_thumbnail($post_id, $desktop_id);
+            else             delete_post_thumbnail($post_id);
+        }
 
         $axes = incuSlider_Axes::get_all();
         foreach ($axes as $axis_id => $axis) {

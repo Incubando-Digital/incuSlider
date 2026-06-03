@@ -120,7 +120,31 @@ class incuSlider_Image_Helper {
      */
     public static function enqueue_styles() {
         $css = '.incuslider-image{display:block;width:100%;height:100%;line-height:0;}'
-             . '.incuslider-image__img{width:100%;height:100%;object-fit:cover;display:block;}';
+             . '.incuslider-image__img{width:100%;height:100%;object-fit:cover;display:block;}'
+             // Modo "cover": la imagen se posiciona absoluta para llenar el alto del
+             // Loop Item (que define su altura con min-height). Sin esto, la cadena de
+             // height:100% se rompe en el flexbox de Elementor (padres con height auto)
+             // y la imagen toma su altura natural, dejando espacio vacío. El container
+             // del Loop Item ya es position:relative por defecto en Elementor.
+             // Modo "cover": <picture> e <img> se estiran con inset:0 (no con height:%,
+             // que requiere altura DEFINIDA en los padres — el flexbox de Elementor da
+             // alturas "auto" aunque rendericen con tamaño, rompiendo el %). Con inset:0
+             // cada uno llena el box renderizado de su contenedor posicionado. El
+             // container del Loop Item define la altura con min-height + el widget con
+             // flex-grow. object-fit:cover (regla base) hace el recorte.
+             . '.incuslider-image.is-cover{position:absolute;inset:0;height:auto;width:auto;}'
+             . '.incuslider-image.is-cover .incuslider-image__img{position:absolute;inset:0;height:100%;width:100%;}'
+             // Dots de paginación SOBRE la imagen (no en franja externa): Elementor le
+             // pone padding-bottom:16px al swiper del Loop Carousel para reservar lugar a
+             // los dots "afuera". Como los dots ya son position:absolute;bottom:5px, al
+             // sacar ese padding quedan superpuestos sobre el banner. Scoped solo a los
+             // carouseles que usan incuSlider (vía :has) para no afectar otros loops.
+             . '.elementor-widget-loop-carousel:has(.incuslider-image) .swiper{padding-bottom:0!important;}'
+             // Subir los dots 10px. Swiper fija top:<alto>px inline (gana sobre bottom),
+             // así que overrideamos top con calc(100% - 10px) — relativo al container,
+             // o sea escala en cualquier breakpoint (390/254). bottom:auto para que no
+             // sobre-restrinja.
+             . '.elementor-widget-loop-carousel:has(.incuslider-image) .swiper-pagination{top:calc(100% - 20px)!important;bottom:auto!important;}';
         wp_register_style('incuslider-image', false, array(), INCUSLIDER_VERSION);
         wp_enqueue_style('incuslider-image');
         wp_add_inline_style('incuslider-image', $css);

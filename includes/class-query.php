@@ -21,6 +21,20 @@ class incuSlider_Query {
 
     public static function apply_user_filters($query, $user_id = null) {
         if (!($query instanceof WP_Query)) return;
+
+        // Guard de re-entrada — PREVIENE RECURSIÓN INFINITA.
+        // build_meta_query() resuelve el contexto del user vía los `resolve` de cada
+        // axis. Algunos resolve ejecutan su PROPIA WP_Query (ej. el axis
+        // community_role → learndash_get_users_group_ids() → WP_Query en LearnDash).
+        // Elementor tiene un filtro pre_get_posts (Elementor_Post_Query) que re-dispara
+        // este mismo action `elementor/query/incuslider_main` para CUALQUIER WP_Query
+        // anidada, así que sin este guard apply_user_filters se llama a sí mismo en
+        // bucle (8000+ veces) hasta agotar la memoria (2GB → HTTP 502). Solo ocurría
+        // con usuario logueado, porque los resolve cortan temprano si !$user_id.
+        // Al re-entrar, salimos sin tocar la query anidada (no es del slider).
+        static $running = false;
+        if ($running) return;
+
         if ($user_id === null) $user_id = get_current_user_id();
 
         $query->set('post_type', incuSlider_CPT::POST_TYPE);
@@ -42,7 +56,13 @@ class incuSlider_Query {
         // Preview context override: si la URL trae incuslider_preview_ctx (capability-gated),
         // se usa esa data en vez del current user para previsualizar
         $preview_ctx = self::get_preview_context_override();
+
+        // Marcar re-entrada SOLO alrededor de build_meta_query (donde los resolve de
+        // axes pueden disparar WP_Query anidadas que re-entran a este método).
+        $running = true;
         $meta_query = self::build_meta_query($user_id, $preview_ctx);
+        $running = false;
+
         if (!empty($meta_query)) $query->set('meta_query', $meta_query);
     }
 

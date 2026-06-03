@@ -16,6 +16,31 @@ if (!defined('ABSPATH')) exit;
 
     <table class="form-table" role="presentation">
         <tr>
+            <th><label><?php esc_html_e('Imagen Desktop', 'incuslider'); ?> <span style="color:#a82318">*</span></label></th>
+            <td>
+                <div class="incuslider-media-picker" data-input-name="_incu_image_desktop">
+                    <input type="hidden" name="_incu_image_desktop" value="<?php echo esc_attr($image_desktop_id); ?>" class="incuslider-media-input" />
+                    <div class="incuslider-media-preview" <?php echo $desktop_thumb ? '' : 'style="display:none"'; ?>>
+                        <?php if ($desktop_thumb): ?>
+                            <img src="<?php echo esc_url($desktop_thumb); ?>" alt="" />
+                            <p class="incuslider-media-filename"><?php echo esc_html($desktop_filename); ?></p>
+                        <?php endif; ?>
+                    </div>
+                    <p>
+                        <button type="button" class="button incuslider-media-select">
+                            <span class="dashicons dashicons-format-image" style="margin-top:3px"></span>
+                            <?php echo $desktop_thumb ? esc_html__('Cambiar imagen', 'incuslider') : esc_html__('Seleccionar imagen', 'incuslider'); ?>
+                        </button>
+                        <button type="button" class="button-link incuslider-media-remove" <?php echo $desktop_thumb ? '' : 'style="display:none"'; ?>>
+                            <?php esc_html_e('Quitar', 'incuslider'); ?>
+                        </button>
+                    </p>
+                    <p class="description"><?php esc_html_e('Imagen principal de la slide (escritorio y por defecto). Es la que usa el Loop Item de Elementor como fondo.', 'incuslider'); ?></p>
+                </div>
+            </td>
+        </tr>
+
+        <tr>
             <th><label><?php esc_html_e('Imagen Mobile', 'incuslider'); ?></label></th>
             <td>
                 <div class="incuslider-media-picker" data-input-name="_incu_image_mobile">
@@ -35,7 +60,7 @@ if (!defined('ABSPATH')) exit;
                             <?php esc_html_e('Quitar', 'incuslider'); ?>
                         </button>
                     </p>
-                    <p class="description"><?php esc_html_e('Imagen para viewports menores a 768px. Si no hay, se usa la imagen destacada (desktop).', 'incuslider'); ?></p>
+                    <p class="description"><?php esc_html_e('Opcional. Imagen para viewports menores a 768px. Si no hay, se usa la imagen Desktop.', 'incuslider'); ?></p>
                 </div>
             </td>
         </tr>
